@@ -1,6 +1,7 @@
 package sr.will.pingpassthrough;
 
 import com.google.inject.Inject;
+import com.velocitypowered.api.event.PostOrder;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyPingEvent;
 import com.velocitypowered.api.plugin.Plugin;
@@ -17,7 +18,7 @@ public class PingPassthrough {
     @Inject
     private ProxyServer proxy;
 
-    @Subscribe
+    @Subscribe(order = PostOrder.LATE)
     public void onProxyPing(ProxyPingEvent event) {
         // We can't get a server if the client doesn't provide a host
         if (!event.getConnection().getVirtualHost().isPresent()) return;
@@ -40,15 +41,7 @@ public class PingPassthrough {
                 break;
             }
         } catch (InterruptedException | ExecutionException e) {
-            // Velocity doesn't let us refuse the connection or set the ping to null, so we have to timeout
-            try {
-                // Default timeout is 30 seconds, so wait 31 for good measure
-                Thread.sleep(31 * 1000);
-            } catch (InterruptedException f) {
-                f.printStackTrace();
-            }
-
-            // Send a result anyway in case the client has a longer than default timeout value
+            // Velocity doesn't let us refuse the connection or set the ping to null, so we have to send a response instead
             event.setPing(ServerPing.builder()
                     .description(TextComponent.of("Server is offline", TextColor.RED))
                     .build());
